@@ -6,13 +6,18 @@ import java.util.stream.Collectors;
 
 /**
  * Goldman Sachs interview
+ * This was the CoderPad example from Goldman Sachs (2nd round)
+ * I completely fluffed it, blame it on extreme jet lag.
+ * Anyways fairly straightforward in the end
  */
 public class Solution {
 
     public static class Interval {
+
         int startTime;
         int endTime;
         int price;
+
         public Interval(int startTime, int endTime, int price) {
             this.startTime = startTime;
             this.endTime = endTime;
