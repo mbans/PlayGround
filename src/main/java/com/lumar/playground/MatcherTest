@@ -1,0 +1,230 @@
+package com.lumar.money.lumarmoney.service;
+
+import org.assertj.core.util.Lists;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+
+/**
+ * Created by lumarmacy1 on 23/02/2018.
+ */
+public class MatcherTest {
+
+
+    @Test
+    public void testTrade() {
+
+        //expected
+        List<Trade> actual = new ArrayList<>();
+        actual.add(new Trade("1", new Event("Stock", 11)));
+//        actual.add(new Trade("2", new Event("Stock", 10)));
+
+        //actual
+//        TradeMatcher expected1 = new TradeMatcher(new Trade("1", new Event("Stock", 10)));
+        TradeMatcher expected2 = new TradeMatcher(new Trade("2", new Event("Stock", 10)));
+
+        //Singluar
+        TradeMatcher expected1 = new TradeMatcher(new Trade("1", new Event("Stock", 10)));
+        Trade actual1 = new Trade("2", new Event("Stock", 11));
+        assertThat(actual1, expected1);
+    }
+
+    @Test
+    public void testMultiple() {
+        //Singluar
+        Trade expected1 = new Trade("1", new Event("Stock", 10));
+//        Trade expected2 = new Trade("2", new Event("Stock", 11));
+
+        TradeMatcher actual1 = new TradeMatcher(new Trade("1", new Event("Stock", 10)));
+        TradeMatcher actual2 = new TradeMatcher(new Trade("2", new Event("Stock", 10)));
+
+
+        assertThat(Lists.newArrayList(expected1), containsInAnyOrder(actual1, actual2));
+    }
+
+
+    @Test
+    public void testEvent() {
+        //expected
+        Event e = new Event("Stock", 10);
+
+        Event actual1 = new Event("Rate", 11);
+        Event actual2 = new Event("Stock", 11);
+
+        assertThat(Lists.newArrayList(actual1,actual2), containsInAnyOrder(Lists.newArrayList(e)));
+    }
+
+
+
+    public static class TradeMatcher extends TypeSafeDiagnosingMatcher<Trade> {
+
+        private Trade trade;
+        private Matcher<Iterable<? extends Event>>  allEventMatcher;
+        private Matcher<String> refMatcher;
+
+        public TradeMatcher(Trade trade) {
+            this.trade = trade;
+            this.refMatcher = equalTo(trade.getRef());
+
+            //check stock evts
+            List<Event> events = trade.getEvents();
+            EventMatcher[] matcherArr = new EventMatcher[events.size()];
+            int i=0;
+            for(Event e : events) {
+                matcherArr[i] = new EventMatcher(e);
+            }
+
+            allEventMatcher = containsInAnyOrder(matcherArr);
+
+        }
+
+        @Override
+        protected boolean matchesSafely(Trade item, Description mismatchDescription) {
+
+            boolean matches = true;
+            if(!refMatcher.matches(item.getRef())) {
+                matches = false;
+                mismatchDescription.appendText(" TradeRef ");
+                this.refMatcher.describeMismatch(item.getRef(), mismatchDescription);
+            }
+
+            if(!allEventMatcher.matches(item.getEvents())) {
+                if(!matches) {
+                    mismatchDescription.appendText(", ");
+                }
+                matches = false;
+                mismatchDescription.appendText("Events ");
+                this.allEventMatcher.describeMismatch(item.getEvents() ,mismatchDescription);
+            }
+
+            return matches;
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText(this.trade+"");
+        }
+    }
+
+    public static class EventMatcher extends TypeSafeDiagnosingMatcher<Event> {
+
+        Matcher<String> typeMatcher;
+        Matcher<Integer> qtyMatcher;
+
+        private Event event;
+
+        public EventMatcher(Event event) {
+            this.event = event;
+            this.typeMatcher = equalTo(event.getType());
+            this.qtyMatcher = equalTo(event.getAmount());
+        }
+
+        @Override
+        protected boolean matchesSafely(Event item, Description mismatchDescription) {
+            boolean matches = true;
+            if(!this.typeMatcher.matches(item.getType())) {
+                matches = false;
+                mismatchDescription.appendText("Type ");
+                this.typeMatcher.describeMismatch(item.getType(),mismatchDescription);
+            }
+
+            if(!this.qtyMatcher.matches(item.getAmount())) {
+                if(!matches) {
+                    mismatchDescription.appendText(", ");
+                }
+
+                matches = false;
+                mismatchDescription.appendText("Amount ");
+                this.qtyMatcher.describeMismatch(item.getAmount(),mismatchDescription);
+            }
+
+            return matches;
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("Type=" + this.event.getType() + ", Amount=" + this.event.getAmount());
+        }
+
+    }
+
+    public static class Trade {
+
+        private String ref;
+        private List<Event> events = new ArrayList<>();
+
+        public Trade(String ref, Event... evts) {
+            this.ref = ref;
+            this.events.addAll(Arrays.asList(evts));
+        }
+
+
+        public String getRef() {
+            return ref;
+        }
+
+        public void setRef(String ref) {
+            this.ref = ref;
+        }
+
+        public List<Event> getEvents() {
+            return events;
+        }
+
+        public void setEvents(List<Event> events) {
+            this.events = events;
+        }
+
+        @Override
+        public String toString() {
+            return "Trade{" +
+                    "ref='" + ref + '\'' +
+                    ", events=" + events +
+                    '}';
+        }
+    }
+
+    public static class Event {
+
+        private String type;
+        private Integer amount;
+
+        public Event(String type, Integer amt) {
+            this.type = type;
+            this.amount = amt;
+        }
+
+        public Integer getAmount() {
+            return amount;
+        }
+
+        public void setAmount(Integer amount) {
+            this.amount = amount;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        @Override
+        public String toString() {
+            return "Event{" +
+                    "type='" + type + '\'' +
+                    ", amount=" + amount +
+                    '}';
+        }
+    }
+}
